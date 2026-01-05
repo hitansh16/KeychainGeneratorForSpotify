@@ -12,8 +12,7 @@
 
 /* [Code Data] */
 // Paste the string from the generator tool here:
-data_string = "18,42,20,88,55,100,77,100,55,42,42,100,30,42,42,30,42,30,30,100,65,20,20";
-// This is the code which generates a tag to my favorite song: Location by Khalid
+data_string = "";
 
 /* [Tag Settings] */
 // Total length of the tag in mm
@@ -133,5 +132,6 @@ function parse_csv(str) =
 
 function str_to_num(chars) = 
     sum_pow([for(i=[0:len(chars)-1]) (ord(chars[i])-48) * pow(10, len(chars)-1-i)]);
+
 
 function sum_pow(v, i=0, r=0) = i < len(v) ? sum_pow(v, i+1, r+v[i]) : r;
