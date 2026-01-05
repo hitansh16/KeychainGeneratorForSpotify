@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keychain Generator for Spotify</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: #181818;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 60px rgba(0,0,0,0.5);
+        }
+        h1 { margin-top: 0; color: #fff; font-size: 24px; text-align: center; margin-bottom: 5px; }
+        .subtitle { color: #888; font-size: 14px; text-align: center; margin-bottom: 30px; }
+        .instructions {
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #1DB954;
+            margin-bottom: 25px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .instructions h3 { margin: 0 0 10px 0; color: #1DB954; font-size: 16px; }
+        .instructions ol { margin: 0; padding-left: 20px; color: #ddd; }
+        .instructions li { margin-bottom: 8px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 14px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #282828;
+            color: white;
+            font-size: 16px;
+            font-family: monospace;
+        }
+        input[type="text"]:focus { outline: 2px solid #1DB954; border-color: transparent; }
+        button {
+            padding: 0 25px;
+            background-color: #1DB954;
+            color: black;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: transform 0.1s, background-color 0.2s;
+            white-space: nowrap;
+        }
+        button:hover { background-color: #1ed760; transform: scale(1.02); }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+        .error {
+            color: #ff5555;
+            background: rgba(255, 85, 85, 0.1);
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            font-size: 14px;
+            text-align: center;
+        }
+        #results { display: none; margin-top: 30px; border-top: 1px solid #333; padding-top: 25px; }
+        .step-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #888;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .tag-display {
+            background: #000;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #previewImage { max-width: 100%; height: auto; max-height: 100px; display: inline-block; }
+        
+        /* Test Warning Box */
+        .test-warning {
+            background: rgba(29, 185, 84, 0.1);
+            border: 1px solid #1DB954;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #ddd;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            line-height: 1.6;
+        }
+        .test-warning strong { color: #1DB954; font-weight: 700; }
+
+        .copy-container { position: relative; cursor: pointer; margin-top: 5px; }
+        .output-box {
+            background: #222;
+            padding: 18px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            transition: border-color 0.2s, background 0.2s;
+            line-height: 1.4;
+        }
+        .copy-container:hover .output-box { border-color: #1DB954; background: #2a2a2a; }
+        .click-hint {
+            position: absolute;
+            top: -28px;
+            right: 0;
+            background: #1DB954;
+            color: black;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 4px;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: all 0.2s;
+            pointer-events: none;
+        }
+        .copy-container:hover .click-hint { opacity: 1; transform: translateY(0); }
+        
+        .maker-btn-container {
+            margin-top: 25px;
+            text-align: center;
+        }
+        .maker-btn {
+            background-color: #009688; /* MakerWorld Green-ish */
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .maker-btn:hover { background-color: #00796b; }
+
+        .copied-toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1DB954;
+            color: black;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            display: none;
+            z-index: 100;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        footer {
+            margin-top: 50px;
+            color: #555;
+            font-size: 11px;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.5;
+            padding-bottom: 20px;
+        }
+        @keyframes popIn { from { transform: translateX(-50%) scale(0.8); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Keychain Generator for Spotify</h1>
+        <div class="subtitle">Create printable 3D models compatible with Spotify Codes</div>
+        
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <ol>
+                <li>Open Spotify and find your Song, Album, or Playlist.</li>
+                <li>Tap the <strong>(...)</strong> menu > <strong>Share</strong> > <strong>Copy Link</strong>.</li>
+                <li>Paste the link below and click <strong>Scan Tag</strong>.</li>
+            </ol>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="urlInput" value="https://open.spotify.com/track/152lZdxL1OR0ZMW6KquMif?si=c6c15b85dcaa49af" placeholder="Paste Link here...">
+            <button onclick="processUrl()" id="scanBtn">Scan Tag</button>
+        </div>
+
+        <div id="error" class="error"></div>
+        <canvas id="hiddenCanvas"></canvas>
+
+        <div id="results">
+            <div class="step-title">1. Verify & Scan On-Screen</div>
+            <div class="tag-display">
+                <img id="previewImage" crossOrigin="Anonymous" alt="Scannable Code Preview">
+            </div>
+            <p style="text-align: center; font-size: 13px; color: #888; margin-top: -5px; margin-bottom: 30px;">
+                Scan the image above with your phone to verify it links to the correct song.
+            </p>
+
+            <div class="step-title">2. Copy Data for MakerWorld</div>
+            <p style="font-size: 14px; margin-bottom: 12px; color: #b3b3b3;">
+                Click below to copy the code.
+            </p>
+            <div class="copy-container" onclick="copyToClipboard()">
+                <div class="click-hint">Click to Copy</div>
+                <div id="outputString" class="output-box"></div>
+            </div>
+
+            <div class="maker-btn-container">
+                <a href="https://makerworld.com/en/@1GN16" target="_blank" class="maker-btn">
+                    Open 3D Generator on MakerWorld →
+                </a>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    Paste the copied code into the "Code Data" field on MakerWorld.
+                </p>
+            </div>
+
+            <div class="test-warning">
+                <span style="font-size: 24px; margin-top: -2px;">⚠️</span>
+                <div>
+                    <strong>Test the 3D Model!</strong> 
+                    Paste the data into MakerWorld and check the preview. 
+                    Then, open Spotify on your phone and scan the <strong>3D model preview on your screen</strong>. 
+                    If that works, your print will work.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>This project is an independent tool created for educational purposes.</p>
+        <p>It is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Spotify AB or any of its subsidiaries or its affiliates. The name Spotify, as well as related names, marks, emblems and images are registered trademarks of their respective owners.</p>
+    </footer>
+
+    <div id="toast" class="copied-toast">Copied to clipboard!</div>
+
+    <script>
+        async function processUrl() {
+            const input = document.getElementById('urlInput');
+            const btn = document.getElementById('scanBtn');
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+            const img = document.getElementById('previewImage');
+            
+            errorDiv.style.display = "none";
+            resultsDiv.style.display = "none";
+            btn.innerText = "Scanning...";
+            btn.disabled = true;
+
+            let type, id;
+            const val = input.value.trim();
+            
+            if (val.includes('spotify:')) {
+                const parts = val.split(':');
+                if (parts.length >= 3) {
+                    type = parts[1];
+                    id = parts[2];
+                }
+            } else {
+                const regex = /open\.spotify\.com\/(track|album|playlist|artist|user)\/([a-zA-Z0-9]+)/;
+                const match = val.match(regex);
+                if (match) {
+                    type = match[1];
+                    id = match[2];
+                }
+            }
+
+            if (!type || !id) {
+                if (val.includes('https://open.spotify.com/track/152lZdxL1OR0ZMW6KquMif?si=c6c15b85dcaa49af')) {
+                     type = "track";
+                     id = "4uia4M2jbz7lZxNp7HHrQk"; 
+                } else {
+                    showError("Invalid URL. Please copy a link directly from the app (Share > Copy Link).");
+                    resetBtn();
+                    return;
+                }
+            }
+
+            const uri = `spotify:${type}:${id}`;
+            const scannableUrl = `https://scannables.scdn.co/uri/plain/png/000000/white/640/${uri}`;
+            const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(scannableUrl);
+
+            img.src = proxyUrl;
+            img.onload = () => {
+                analyzeImage(img);
+                resultsDiv.style.display = "block";
+                resetBtn();
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            };
+            img.onerror = () => {
+                showError("Could not fetch the tag. The ID might be invalid or the proxy is busy.");
+                resetBtn();
+            };
+        }
+
+        function analyzeImage(imgElement) {
+            const canvas = document.getElementById('hiddenCanvas');
+            const ctx = canvas.getContext('2d');
+            const w = imgElement.naturalWidth;
+            const h = imgElement.naturalHeight;
+            canvas.width = w;
+            canvas.height = h;
+
+            ctx.drawImage(imgElement, 0, 0);
+            const frame = ctx.getImageData(0, 0, w, h);
+            const data = frame.data;
+
+            const midY = Math.floor(h / 2);
+            let barHeights = [];
+            let insideBar = false;
+            let currentBarStart = 0;
+            const startScanX = Math.floor(w * 0.26); 
+
+            for (let x = startScanX; x < w; x++) {
+                const idx = (midY * w + x) * 4;
+                const isWhite = data[idx] > 100;
+
+                if (isWhite && !insideBar) {
+                    insideBar = true;
+                    currentBarStart = x;
+                } else if (!isWhite && insideBar) {
+                    insideBar = false;
+                    const centerX = Math.floor((currentBarStart + x) / 2);
+                    const height = measureVerticalHeight(data, w, h, centerX);
+                    barHeights.push(height);
+                }
+            }
+
+            if (barHeights.length > 0) {
+                const maxVal = Math.max(...barHeights);
+                const normalized = barHeights.map(h => Math.round((h / maxVal) * 100));
+                const csv = normalized.join(',');
+                document.getElementById('outputString').innerText = csv;
+            } else {
+                showError("No bars detected. Is the link correct?");
+            }
+        }
+
+        function measureVerticalHeight(data, w, h, x) {
+            let topY = Math.floor(h / 2);
+            while (topY > 0) {
+                const idx = (topY * w + x) * 4;
+                if (data[idx] < 100) break; 
+                topY--;
+            }
+            let bottomY = Math.floor(h / 2);
+            while (bottomY < h) {
+                const idx = (bottomY * w + x) * 4;
+                if (data[idx] < 100) break; 
+                bottomY++;
+            }
+            return bottomY - topY;
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById("outputString").innerText;
+            if(!text) return;
+            navigator.clipboard.writeText(text).then(() => { showToast(); });
+        }
+
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.style.display = "block";
+            setTimeout(() => { toast.style.display = "none"; }, 2000);
+        }
+
+        function showError(msg) {
+            const err = document.getElementById('error');
+            err.innerText = msg;
+            err.style.display = "block";
+        }
+
+        function resetBtn() {
+            const btn = document.getElementById('scanBtn');
+            btn.innerText = "Scan Tag";
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
